@@ -17,6 +17,7 @@ private var yVelocity:float;
 private var zVelocity:float;
 
 function Start() {
+	// offset used is calculated from position of gameobject respective to target in the scene editor
 	offset = target.position - transform.position;
 }
 
@@ -25,10 +26,10 @@ function LateUpdate() {
 	if (!target)
 		return;
     
-    // Move Camera
-    transform.position = Vector3.SmoothDamp(transform.position, target.position - offset, velocity, 0.4);
+	// Move Camera
+	transform.position = Vector3.SmoothDamp(transform.position, target.position - offset, velocity, 0.4);
 	
-	// Look At...	
+	// Look At... damp axes indepently as z axis damping should be slower than x/y
 	var rotation = Quaternion.LookRotation(target.position - transform.position, target.up).eulerAngles;
 	rotation.x = Mathf.SmoothDampAngle(transform.rotation.eulerAngles.x, rotation.x, xVelocity, 0.1);
 	rotation.y = Mathf.SmoothDampAngle(transform.rotation.eulerAngles.y, rotation.y, yVelocity, 0.1);

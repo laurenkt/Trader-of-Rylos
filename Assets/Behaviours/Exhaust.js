@@ -1,5 +1,11 @@
 #pragma strict
 
+// Exhaust has an 'intensity' property, which it uses to modulate several
+// effects. Change the intensity property to change the intensity of
+// the effects.
+//
+// @author Lauren Tomasello <lauren@tomasello.me>
+
 @HideInInspector public var intensity:float;
 
 @script RequireComponent(TrailRenderer)
@@ -11,9 +17,10 @@ private var flare:LensFlare;
 private var glow:LensFlare;
 
 function Start () {
-	flareLight = GetComponentInChildren.<Light>();
-	glow = transform.FindChild("Glow").GetComponent.<LensFlare>();
-	flare = GetComponent.<LensFlare>();
+	// find components that are used
+	flareLight    = GetComponentInChildren.<Light>();
+	glow          = transform.FindChild("Glow").GetComponent.<LensFlare>();
+	flare         = GetComponent.<LensFlare>();
 	trailRenderer = GetComponent.<TrailRenderer>(); 
 }
 

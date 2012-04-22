@@ -5,7 +5,7 @@
 //
 // @author Lauren Tomasello <lauren@tomasello.me>
 
-class Engine {
+class Engine extends Component {
 
 	class Rocket {
 		var max : float;

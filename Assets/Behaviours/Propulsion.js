@@ -5,9 +5,9 @@
 //
 // @author Lauren Tomasello <lauren@tomasello.me>
 
-@HideInInspector public var mainSpeed  : float = 0;
-@HideInInspector public var pitchSpeed : float = 0;
-@HideInInspector public var rollSpeed  : float = 0;
+@HideInInspector public var mainSpeed  :float = 0;
+@HideInInspector public var pitchSpeed :float = 0;
+@HideInInspector public var rollSpeed  :float = 0;
 
 function Update() {
 	MoveBySpeed(mainSpeed);

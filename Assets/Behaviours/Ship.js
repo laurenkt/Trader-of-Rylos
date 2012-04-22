@@ -1,20 +1,22 @@
 #pragma strict
 
-// Manages the interaction of all ship operations.
+// Manages the interaction of all ship operations. Delegates a lot of responsibility
+// to other components, i.e. Propulsion, Weapon, Engine...
 //
 // @author Lauren Tomasello <lauren@tomasello.me>
+
+import System.Collections.Generic;
 
 @script RequireComponent(Propulsion)
 
 class Ship extends MonoBehaviour implements ControlsDelegate {
 
-	@SerializeField private var controls:Controls;
-	@SerializeField private var exhaust:Exhaust;
+	private var exhaust:Exhaust;
 	
 	private var engine:Engine = Engine();
 	private var propulsion:Propulsion;
 	private var weapon:int = 0;
-	private var weapons = Array();
+	private var weapons:Cannon[] = new Cannon[2];
 	
 	private var sternThrusting     = false;
 	private var bowThrusting       = false;
@@ -23,30 +25,37 @@ class Ship extends MonoBehaviour implements ControlsDelegate {
 	private var upThrusting        = false;
 	private var downThrusting      = false;
 	
-	private var listeners = Array();
+	private var listeners = List.<ShipListener>();
 	
 	function AddListener(listener:ShipListener) {
-		listeners.Push(listener);
+		listeners.Add(listener);
 	}
 	
 	function NotifyListeners() {
+		// notify all the ShipListeners in listeners of the ShipListener callbacks
+		// we do it this way so that modules like the HUD need have no knowledge of
+		// how ship physics are implemented, they only need the values.
 		for (var listener in listeners) {
-			(listener as ShipListener).OnSpeedChange(propulsion.mainSpeed, propulsion.pitchSpeed, propulsion.rollSpeed);
-			(listener as ShipListener).OnThrustChange(engine.stern.current, engine.bow.current, engine.port.current,
+			listener.OnSpeedChange(propulsion.mainSpeed, propulsion.pitchSpeed, propulsion.rollSpeed);
+			listener.OnThrustChange(engine.stern.current, engine.bow.current, engine.port.current,
 				engine.starboard.current, engine.up.current, engine.down.current);
 		}
 	}
 	
 	function Start() {
 		propulsion = GetComponent.<Propulsion>();
-		weapons = GetComponentsInChildren.<Cannon>();
-		controls.Delegate = this;
+		engine     = GetComponentInChildren.<Engine>();
+		weapons    = GetComponentsInChildren.<Cannon>();
+		
+		// register for control delegate notifications
+		Camera.main.GetComponent.<Controls>().delegate = this;
 	}
 	
 	function Update() {
 		engine.stern.Adjust(sternThrusting, Time.deltaTime);
 		engine.bow.Adjust(bowThrusting, Time.deltaTime);
 
+		// Self-righting mechanism...
 		if (!portThrusting && !starboardThrusting) {
 			if (propulsion.pitchSpeed < 0) {
 				engine.port.Increase(Time.deltaTime);
@@ -77,24 +86,30 @@ class Ship extends MonoBehaviour implements ControlsDelegate {
 			engine.down.Adjust(downThrusting, Time.deltaTime);
 		}
 		
-		propulsion.mainSpeed  += (engine.stern.current - engine.bow.current);
-		propulsion.pitchSpeed += (engine.port.current - engine.starboard.current);
-		propulsion.rollSpeed  += (engine.up.current - engine.down.current);
+		propulsion.mainSpeed  += (engine.stern.current - engine.bow.current) * Time.deltaTime;
+		propulsion.pitchSpeed += (engine.port.current - engine.starboard.current) * Time.deltaTime;
+		propulsion.rollSpeed  += (engine.up.current - engine.down.current) * Time.deltaTime;
 		
-		if (propulsion.mainSpeed < 0) propulsion.mainSpeed = 0;
-		else if (propulsion.mainSpeed > 10) propulsion.mainSpeed = 10;
+		// Having a maximum speed is unrealistic.. but having no maximum speed
+		// *feels* unrealistic when playing, and very hard to control.
+		if (propulsion.mainSpeed < 0)
+			propulsion.mainSpeed = 0;
+		else if (propulsion.mainSpeed > 10)
+			propulsion.mainSpeed = 10;
 		
 		exhaust.intensity = engine.stern.current;
 	}
 	
 	function LateUpdate() {
+		// do this in LateUpdate because there's no point notifying about changes before
+		// we know what the changes actually are.
 		NotifyListeners();
 	}
 	
 	// implementing ControlsDelegate:
 	
 	function OnWeaponFire() {
-		var cannon = weapons[weapon] as Cannon;
+		var cannon:Cannon = weapons[weapon];
 		cannon.Fire();
 		
 		if (++weapon == weapons.length) weapon = 0;

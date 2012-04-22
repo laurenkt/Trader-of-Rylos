@@ -6,19 +6,15 @@
 
 class Controls extends MonoBehaviour {
 
-	@SerializeField private var sternThruster     : UnityEngine.KeyCode;
-	@SerializeField private var bowThruster       : UnityEngine.KeyCode;
-	@SerializeField private var portThruster      : UnityEngine.KeyCode;
-	@SerializeField private var starboardThruster : UnityEngine.KeyCode;
-	@SerializeField private var upThruster        : UnityEngine.KeyCode;
-	@SerializeField private var downThruster      : UnityEngine.KeyCode;
-	@SerializeField private var fire     		  : UnityEngine.KeyCode;
+	@SerializeField private var sternThruster     :UnityEngine.KeyCode;
+	@SerializeField private var bowThruster       :UnityEngine.KeyCode;
+	@SerializeField private var portThruster      :UnityEngine.KeyCode;
+	@SerializeField private var starboardThruster :UnityEngine.KeyCode;
+	@SerializeField private var upThruster        :UnityEngine.KeyCode;
+	@SerializeField private var downThruster      :UnityEngine.KeyCode;
+	@SerializeField private var fire              :UnityEngine.KeyCode;
 	
-	private var delegate : ControlsDelegate;
-	
-	function set Delegate(value : ControlsDelegate) {
-		delegate = value as ControlsDelegate;
-	}
+	public var delegate:ControlsDelegate;
 	
 	function Update() {
 		if (!delegate)
@@ -38,7 +34,7 @@ class Controls extends MonoBehaviour {
 		if (Input.GetKeyUp(upThruster))          delegate.OffUpThrust();
 		if (Input.GetKeyUp(downThruster))        delegate.OffDownThrust();
 		
-		if (Input.GetKeyDown(fire))				 delegate.OnWeaponFire();
+		if (Input.GetKeyDown(fire))              delegate.OnWeaponFire();
 	}
 
 }
