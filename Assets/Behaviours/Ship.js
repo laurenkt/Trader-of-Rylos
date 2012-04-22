@@ -11,9 +11,9 @@ import System.Collections.Generic;
 
 class Ship extends MonoBehaviour implements ControlsDelegate {
 
-	private var exhaust:Exhaust;
-	
 	private var engine:Engine = Engine();
+
+	private var exhaust:Exhaust;
 	private var propulsion:Propulsion;
 	private var weapon:int = 0;
 	private var weapons:Cannon[] = new Cannon[2];
@@ -44,7 +44,7 @@ class Ship extends MonoBehaviour implements ControlsDelegate {
 	
 	function Start() {
 		propulsion = GetComponent.<Propulsion>();
-		engine     = GetComponentInChildren.<Engine>();
+		exhaust    = GetComponentInChildren.<Exhaust>();
 		weapons    = GetComponentsInChildren.<Cannon>();
 		
 		// register for control delegate notifications
@@ -86,16 +86,13 @@ class Ship extends MonoBehaviour implements ControlsDelegate {
 			engine.down.Adjust(downThrusting, Time.deltaTime);
 		}
 		
-		propulsion.mainSpeed  += (engine.stern.current - engine.bow.current) * Time.deltaTime;
-		propulsion.pitchSpeed += (engine.port.current - engine.starboard.current) * Time.deltaTime;
-		propulsion.rollSpeed  += (engine.up.current - engine.down.current) * Time.deltaTime;
+		propulsion.mainSpeed  += (engine.stern.current - engine.bow.current);
+		propulsion.pitchSpeed += (engine.port.current - engine.starboard.current);
+		propulsion.rollSpeed  += (engine.up.current - engine.down.current);
 		
 		// Having a maximum speed is unrealistic.. but having no maximum speed
 		// *feels* unrealistic when playing, and very hard to control.
-		if (propulsion.mainSpeed < 0)
-			propulsion.mainSpeed = 0;
-		else if (propulsion.mainSpeed > 10)
-			propulsion.mainSpeed = 10;
+		propulsion.mainSpeed = Mathf.Clamp(propulsion.mainSpeed, 0, 10);
 		
 		exhaust.intensity = engine.stern.current;
 	}
