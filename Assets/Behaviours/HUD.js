@@ -43,9 +43,13 @@ class HUD extends GUIOverlay implements ShipListener {
 		var drawAt:Vector2 = Vector2.zero;
 		var screenPoint:Vector3;
 		var angle:float;
+		var label:String;
+		var color:Color;
 		
 		for (var trackable in trackables) {
-			screenPoint = camera.WorldToViewportPoint((trackable as GameObject).transform.position);
+			label = trackable.GetComponent.<Trackable>().label;
+			color = trackable.GetComponent.<Trackable>().color;
+			screenPoint = camera.WorldToViewportPoint(trackable.transform.position);
 			// only draw the pointer if trackable is offscreen
 			if (true || screenPoint.z < 0 || screenPoint.x < 0 || screenPoint.x > Screen.width ||
 				screenPoint.y < 0 || screenPoint.y > Screen.height) {
@@ -84,6 +88,9 @@ class HUD extends GUIOverlay implements ShipListener {
 				
 				// restore rotational matrix
 				GUI.matrix = previousGuiMatrix;
+				
+				if (label != "" && screenPoint.z >= 0)
+					GUI.Label(Rect(drawAt.x + pointer.width, drawAt.y+ pointer.height, 100, 50), label, guiStyle);
 			}
 		}
 		

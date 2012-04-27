@@ -1,54 +1,32 @@
 #pragma strict
 
-// Class for storing engine data, includes inner-class `Rocket` for storing data
+// Class for storing engine data, includes inner-class `Thruster` for storing data
 // on particular thrusters.
 //
 // @author Lauren Tomasello <lauren@tomasello.me>
 
 class Engine extends Component {
 
-	class Rocket {
-		var max : float;
-		var current : float;
-		var acceleration : float;
-				
-		function Rocket(current : float, max : float, acceleration : float) {
-			this.max = max;
-			this.current = current;
-			this.acceleration = acceleration;
+	class Thruster {
+		var output:float = 0;
+		var force:float;
+		
+		function Thruster(force:float) {
+			this.force = force;
 		}
 		
-		function Increase(t : float) {
-			var proposed = current + acceleration*t;
-				
-			if (proposed <= max)
-				current = proposed;
-		}
-				
-		function Decrease(t : float) {
-			var proposed = current - acceleration*t;
-			
-			if (proposed >= 0)
-				current = proposed;
-		}
-		
-		function Adjust(increase : boolean, t : float) {
-			if (increase)
-				Increase(t);
-			else
-				Decrease(t);
-		}
-		
-		function Kill() {
-			current = 0;
+		function Set(value:float) {
+			this.output = Mathf.Clamp01(value);
 		}
 	}
 
-	var stern     = Rocket(0, 1.0, 0.2);
-	var bow       = Rocket(0, 2.0, 0.15);
-	var starboard = Rocket(0, 1.0, 0.6);
-	var port      = Rocket(0, 1.0, 0.6);
-	var up        = Rocket(0, 1.0, 0.6);
-	var down      = Rocket(0, 1.0, 0.6);
-	
+	var forward   = new Thruster(20);
+	var backward  = new Thruster(10);
+	var left      = new Thruster(10);
+	var right     = new Thruster(10);
+	var up        = new Thruster(10);
+	var down      = new Thruster(10);
+	var clockwise = new Thruster(10);
+	var counter   = new Thruster(10);
+
 }

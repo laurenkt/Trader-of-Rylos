@@ -5,24 +5,28 @@
 //
 // @author Lauren Tomasello <lauren@tomasello.me>
 
-@HideInInspector public var mainSpeed  :float = 0;
-@HideInInspector public var pitchSpeed :float = 0;
-@HideInInspector public var rollSpeed  :float = 0;
+@HideInInspector public var forward:float = 0;
+@HideInInspector public var rotational:Vector3 = Vector3.zero;
 
 function Update() {
-	MoveBySpeed(mainSpeed);
-	PitchBySpeed(pitchSpeed);
-	RollBySpeed(rollSpeed);
+	TranslateBySpeed(forward);
+	YawBySpeed(rotational.x);
+	RollBySpeed(rotational.y);
+	PitchBySpeed(rotational.z);
 }
 
-function MoveBySpeed(speed : float) {
+function TranslateBySpeed(speed : float) {
 	transform.Translate(Vector3.up * speed * Time.deltaTime);
 }
 
+function YawBySpeed(speed : float) {
+	transform.Rotate(Time.deltaTime * speed * Vector3.forward);
+}
+
 function PitchBySpeed(speed : float) {
-	transform.Rotate(Vector3.up * speed * Time.deltaTime);
+	transform.Rotate(Time.deltaTime * speed * Vector3.up);
 }
 
 function RollBySpeed(speed : float) {
-	transform.Rotate(Vector3.right * speed * Time.deltaTime);
+	transform.Rotate(Time.deltaTime * speed * Vector3.right);
 }

@@ -9,21 +9,16 @@ import System.Collections.Generic;
 
 @script RequireComponent(Propulsion)
 
-class Ship extends MonoBehaviour implements ControlsDelegate {
+class Ship extends MonoBehaviour {
 
-	private var engine:Engine = Engine();
-
+	private var engine:Engine;
 	private var exhaust:Exhaust;
 	private var propulsion:Propulsion;
 	private var weapon:int = 0;
 	private var weapons:Cannon[] = new Cannon[2];
 	
-	private var sternThrusting     = false;
-	private var bowThrusting       = false;
-	private var portThrusting      = false;
-	private var starboardThrusting = false;
-	private var upThrusting        = false;
-	private var downThrusting      = false;
+	private var maxForward:float = 10;
+	private var maxRotational:Vector3 = Vector3(100, 100, 100);
 	
 	private var listeners = List.<ShipListener>();
 	
@@ -36,65 +31,52 @@ class Ship extends MonoBehaviour implements ControlsDelegate {
 		// we do it this way so that modules like the HUD need have no knowledge of
 		// how ship physics are implemented, they only need the values.
 		for (var listener in listeners) {
-			listener.OnSpeedChange(propulsion.mainSpeed, propulsion.pitchSpeed, propulsion.rollSpeed);
-			listener.OnThrustChange(engine.stern.current, engine.bow.current, engine.port.current,
-				engine.starboard.current, engine.up.current, engine.down.current);
+			listener.OnSpeedChange(propulsion.forward, propulsion.rotational.x, propulsion.rotational.y);
+			listener.OnThrustChange(engine.forward.output, engine.backward.output, engine.left.output,
+				engine.right.output, engine.up.output, engine.down.output);
 		}
 	}
 	
 	function Start() {
+		engine     = new Engine();
 		propulsion = GetComponent.<Propulsion>();
 		exhaust    = GetComponentInChildren.<Exhaust>();
 		weapons    = GetComponentsInChildren.<Cannon>();
-		
-		// register for control delegate notifications
-		Camera.main.GetComponent.<Controls>().delegate = this;
 	}
 	
+	var forwardTarget:float;
+	var rotationalTarget:Vector3 = Vector3.zero;
+	
 	function Update() {
-		engine.stern.Adjust(sternThrusting, Time.deltaTime);
-		engine.bow.Adjust(bowThrusting, Time.deltaTime);
-
-		// Self-righting mechanism...
-		if (!portThrusting && !starboardThrusting) {
-			if (propulsion.pitchSpeed < 0) {
-				engine.port.Increase(Time.deltaTime);
-				engine.starboard.Kill();
-			}
-			else if (propulsion.pitchSpeed > 0) {
-				engine.starboard.Increase(Time.deltaTime);
-				engine.port.Kill();
-			}
-		}
-		else {
-			engine.starboard.Adjust(starboardThrusting, Time.deltaTime);
-			engine.port.Adjust(portThrusting, Time.deltaTime);
-		}
-				
-		if (!upThrusting && !downThrusting) {
-			if (propulsion.rollSpeed > 0) {
-				engine.down.Increase(Time.deltaTime);
-				engine.up.Kill();
-			}
-			else if (propulsion.rollSpeed < 0) {
-				engine.up.Increase(Time.deltaTime);
-				engine.down.Kill();
-			}
-		}
-		else {
-			engine.up.Adjust(upThrusting, Time.deltaTime);
-			engine.down.Adjust(downThrusting, Time.deltaTime);
-		}
+		if (Input.GetButtonDown("Fire1")) OnWeaponFire();
 		
-		propulsion.mainSpeed  += (engine.stern.current - engine.bow.current);
-		propulsion.pitchSpeed += (engine.port.current - engine.starboard.current);
-		propulsion.rollSpeed  += (engine.up.current - engine.down.current);
+		forwardTarget      = Input.GetAxis("Speed");
+		rotationalTarget.x = Input.GetAxis("Horizontal");
+		rotationalTarget.y = Input.GetAxis("Vertical");
+		rotationalTarget.z = Input.GetAxis("Pitch");
+		
+		engine.forward.Set  (forwardTarget - (propulsion.forward/maxForward));
+		engine.backward.Set (-(forwardTarget - (propulsion.forward/maxForward)));
+		engine.right.Set    (rotationalTarget.x - (propulsion.rotational.x/maxRotational.x));
+		engine.left.Set     (-(rotationalTarget.x - (propulsion.rotational.x/maxRotational.x)));
+		engine.up.Set       (rotationalTarget.y - (propulsion.rotational.y/maxRotational.y));
+		engine.down.Set     (-(rotationalTarget.y - (propulsion.rotational.y/maxRotational.y)));
+		engine.clockwise.Set(rotationalTarget.z - (propulsion.rotational.z/maxRotational.z));
+		engine.counter.Set  (-(rotationalTarget.z - (propulsion.rotational.z/maxRotational.z)));
+		
+		propulsion.forward      += (engine.forward.output   - engine.backward.output);
+		propulsion.rotational.x += (engine.right.output     - engine.left.output);
+		propulsion.rotational.y += (engine.up.output        - engine.down.output);
+		propulsion.rotational.z += (engine.clockwise.output - engine.counter.output);
 		
 		// Having a maximum speed is unrealistic.. but having no maximum speed
 		// *feels* unrealistic when playing, and very hard to control.
-		propulsion.mainSpeed = Mathf.Clamp(propulsion.mainSpeed, 0, 10);
+		propulsion.forward      = Mathf.Clamp(propulsion.forward, 0, maxForward);
+		propulsion.rotational.x = Mathf.Clamp(propulsion.rotational.x, -maxRotational.x, maxRotational.x);
+		propulsion.rotational.y = Mathf.Clamp(propulsion.rotational.y, -maxRotational.y, maxRotational.y);
+		propulsion.rotational.z = Mathf.Clamp(propulsion.rotational.z, -maxRotational.z, maxRotational.z);
 		
-		exhaust.intensity = engine.stern.current;
+		exhaust.intensity = propulsion.forward/maxForward;
 	}
 	
 	function LateUpdate() {
@@ -112,18 +94,4 @@ class Ship extends MonoBehaviour implements ControlsDelegate {
 		if (++weapon == weapons.length) weapon = 0;
 	}
 	
-	function OnSternThrust()     {     sternThrusting = true; }
-	function OnBowThrust()       {       bowThrusting = true; }
-	function OnPortThrust()      {      portThrusting = true; }
-	function OnStarboardThrust() { starboardThrusting = true; }
-	function OnUpThrust()        {        upThrusting = true; }
-	function OnDownThrust()      {      downThrusting = true; }
-
-	function OffSternThrust()     {     sternThrusting = false; }
-	function OffBowThrust()       {       bowThrusting = false; }
-	function OffPortThrust()      {      portThrusting = false; engine.port.Kill(); }
-	function OffStarboardThrust() { starboardThrusting = false; engine.starboard.Kill(); }
-	function OffUpThrust()        {        upThrusting = false; engine.up.Kill(); }
-	function OffDownThrust()      {      downThrusting = false; engine.down.Kill(); }
-
 }
